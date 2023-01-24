@@ -1,0 +1,3 @@
+
+class TraderSimpleSMA:
+    pass

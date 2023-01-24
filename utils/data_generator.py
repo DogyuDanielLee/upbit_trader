@@ -1,0 +1,3 @@
+
+class PastDataGenerator:
+    pass
