@@ -133,6 +133,3 @@ test.py
 
 # DS Store
 .DS_Store
-
-# Data in notebook
-notebook/data/.
