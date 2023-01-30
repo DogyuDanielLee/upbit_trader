@@ -135,4 +135,4 @@ test.py
 .DS_Store
 
 # Data in notebook
-notebook/data/
+notebook/data/.
