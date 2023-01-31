@@ -3,6 +3,13 @@ import time
 import pytz
 import datetime
 import pandas as pd
+import jwt
+import hashlib
+import os
+import requests
+import uuid
+from urllib.parse import urlencode, unquote
+
 
 class UpbitQuotationAPI:
     def __init__(self):
@@ -191,22 +198,89 @@ class UpbitExchangeAPI:
         self.UPBIT_ACCESS_KEY = upbit_access_key
         self.UPBIT_SECRET_KEY = upbit_secret_key
 
-    def post_bid_order_market(self):
-        '''시장가 매수
-        '''
-        pass
+    def get_order_info(self, uuid_:str):
+        url = "https://api.upbit.com/v1/order"
+        params = {
+            "uuid": uuid_,
+        }
+        query_string = unquote(urlencode(params, doseq=True)).encode("utf-8")
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
+        payload = {
+            'access_key': self.UPBIT_ACCESS_KEY,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
+        jwt_token = jwt.encode(payload, self.UPBIT_SECRET_KEY)
+        authorization = 'Bearer {}'.format(jwt_token)
+        headers = {
+            'Authorization': authorization,
+        }
+        res = requests.get(url, params=params, headers=headers)
+        print(res.json())
 
-    def post_bid_order_limit(self):
+    def post_buy_market(self, market:str="KRW-BTC", price:float=0):
+        """시장가 매수ff
+
+        Parameters:
+            - market (str) : 매수 요청 캔들 마켓, (ex. KRW-BTC, KRW-ETH)
+            - price (float, KRW) : 총 매수하는 금액, (ex. 1BTC의 시장가가 100원이라면, 350원을 입력했을 때, 3.5 BTC 매수가 진행된다.)
+        
+        Returns:
+            - uuid (str) : 주문 고유 번호
+        """
+        try:
+            url = "https://api.upbit.com/v1/orders"
+            params = {
+                "market": market,
+                "side": "bid",
+                "price": str(price),
+                "ord_type": "price"
+            }
+            query_string = unquote(urlencode(params, doseq=True)).encode("utf-8")
+            m = hashlib.sha512()
+            m.update(query_string)
+            query_hash = m.hexdigest()
+            payload = {
+                'access_key': self.UPBIT_ACCESS_KEY,
+                'nonce': str(uuid.uuid4()),
+                'query_hash': query_hash,
+                'query_hash_alg': 'SHA512',
+            }
+            jwt_token = jwt.encode(payload, self.UPBIT_SECRET_KEY)
+            authorization = 'Bearer {}'.format(jwt_token)
+            headers = {
+            'Authorization': authorization,
+            }
+            response = requests.post(url, json=params, headers=headers)
+            success = response.status_code in [201 or "201"]
+            datas = response.json()
+
+            if not success:
+                print(datas['error'])
+                return "error"
+            else:
+                print(datas)
+                order_uuid:str = datas['uuid']
+                return order_uuid
+
+        except Exception as x:
+            print(x.__class__.__name__)
+            return "error_except"
+
+    def post_buy_limit(self):
         '''지정가 매수
         '''
         pass
 
-    def post_ask_order_market(self):
+    def post_sell_market(self):
         '''시장가 매도
         '''
         pass
 
-    def post_ask_order_limit(self):
+    def post_sell_limit(self):
         '''지정가 매도
         '''
         pass
